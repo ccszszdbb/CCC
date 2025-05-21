@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全球建筑能耗洞察</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px; /* Adjusted for better general use */
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 350px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 320px;
+                max-height: 400px;
+            }
+        }
+        .stat-card {
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .stat-title {
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* semibold */
+            color: #03045E; /* Dark Blue Text */
+            margin-bottom: 0.5rem;
+        }
+        .stat-value {
+            font-size: 2.25rem; /* text-4xl */
+            font-weight: 700; /* bold */
+            color: #0077B6; /* Primary Blue */
+        }
+        .stat-context {
+            font-size: 0.875rem; /* text-sm */
+            color: #4A5568; /* gray-600 */
+            margin-top: 0.25rem;
+        }
+        /* Chosen Color Palette: Brilliant Blues (#0077B6, #0096C7, #ADE8F4, #03045E, #CAF0F8) with accent #FFB703 */
+        .bg-primary-blue { background-color: #0077B6; }
+        .text-primary-blue { color: #0077B6; }
+        .bg-secondary-blue { background-color: #0096C7; }
+        .text-secondary-blue { color: #0096C7; }
+        .bg-light-blue-bg { background-color: #CAF0F8; } /* Light/Background for sections */
+        .text-dark-blue-text { color: #03045E; } /* Dark Blue/Text */
+        .accent-yellow { color: #FFB703; }
+        .border-accent-yellow { border-color: #FFB703; }
+
+        /* Flowchart styles */
+        .flowchart-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+        }
+        .flowchart-step {
+            background-color: #E0E7FF; /* Light indigo */
+            border: 2px solid #0077B6; /* Primary blue */
+            color: #03045E; /* Dark blue text */
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.375rem; /* rounded-md */
+            margin-bottom: 1rem;
+            text-align: center;
+            min-width: 200px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .flowchart-arrow {
+            font-size: 1.5rem; /* text-2xl */
+            color: #0077B6; /* Primary blue */
+            margin-bottom: 1rem;
+        }
+
+    </style>
+    <!--
+        Infographic Plan:
+        Section 1: Global Overview (Building Energy Share %, Electricity in Buildings %, CO2 Emissions Direct/Indirect)
+        Section 2: Major Economies Spotlight (USA, China, EU, UK, Canada, India - individual cards with key energy/electricity stats)
+        Section 3: Key Global Trends (Electrification Trend, Data Center Growth, Heating Fuel Mix)
+        Section 4: Data Acquisition Flow (Simplified HTML/CSS flowchart)
+        Section 5: Brief Conclusion
+        Chosen Color Palette: Brilliant Blues (#0077B6, #0096C7, #ADE8F4, #03045E, #CAF0F8) with accent #FFB703.
+        Visualizations: Chart.js (Canvas only). NO SVG. NO MERMAID JS.
+
+        Visualization Choices (Confirming NO SVG, NO MERMAID JS):
+        1. Global Building Share of Final Energy: Donut Chart (Chart.js Canvas). Goal: Inform. Justification: Part-to-whole.
+        2. Global Electricity Share in Building Energy: Donut Chart (Chart.js Canvas). Goal: Inform. Justification: Part-to-whole.
+        3. Global Building CO2 Emissions (Direct vs. Indirect): Bar Chart (Chart.js Canvas). Goal: Compare. Justification: Compare distinct components.
+        4. Country Stats (USA, China, EU, UK, Canada, India): Big Numbers & Text within cards. Goal: Inform/Compare. Justification: Clear presentation of key figures per country.
+        5. Trend - Electrification of Buildings (Global Share): Line Chart (Chart.js Canvas). Goal: Change. Justification: Show trend over time.
+        6. Trend - Data Center Energy Growth (Global total, US/China increase): Bar Chart (Chart.js Canvas). Goal: Compare/Inform. Justification: Show projected growth.
+        7. Challenge - Heating Fuel Mix (Global): Donut Chart (Chart.js Canvas). Goal: Inform/Compare. Justification: Show composition.
+        8. Data Acquisition Flow: HTML/CSS based flowchart. Goal: Organize. Justification: Show simplified process. NO SVG, NO MERMAID JS.
+    -->
+</head>
+<body class="bg-light-blue-bg text-dark-blue-text">
+
+    <header class="bg-primary-blue text-white py-8 sm:py-12 text-center">
+        <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold">全球建筑能耗洞察</h1>
+        <p class="mt-2 text-lg sm:text-xl opacity-90">分析报告摘要与趋势展望</p>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+
+        <section id="global-overview" class="mb-12">
+            <h2 class="text-2xl sm:text-3xl font-bold text-center mb-8 text-dark-blue-text">全球概览：建筑的能源足迹</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="stat-card">
+                    <h3 class="stat-title">建筑运营能耗占比</h3>
+                    <div class="chart-container">
+                        <canvas id="globalEnergyShareChart"></canvas>
+                    </div>
+                    <p class="mt-4 text-center text-sm text-gray-600">2022年，建筑运营能耗约占全球终端能源消耗的30%。</p>
+                </div>
+                <div class="stat-card">
+                    <h3 class="stat-title">建筑电力消耗占比</h3>
+                     <div class="chart-container">
+                        <canvas id="globalElectricityShareChart"></canvas>
+                    </div>
+                    <p class="mt-4 text-center text-sm text-gray-600">2022年，全球建筑用电约占建筑总能耗的35%。</p>
+                </div>
+                <div class="stat-card">
+                    <h3 class="stat-title">建筑运营CO₂排放构成 (2022)</h3>
+                    <div class="chart-container">
+                        <canvas id="globalCO2EmissionsChart"></canvas>
+                    </div>
+                    <p class="mt-4 text-center text-sm text-gray-600">直接排放占比较小，间接排放（来自电力和热力）是主要来源。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="major-economies" class="mb-12">
+            <h2 class="text-2xl sm:text-3xl font-bold text-center mb-8 text-dark-blue-text">主要经济体聚焦</h2>
+            <p class="text-center text-gray-700 mb-8 max-w-2xl mx-auto">以下数据来自报告，年份和统计口径可能存在差异，旨在提供各国建筑能耗的概览。总能耗单位为PJ (拍焦)，电力消耗单位为TWh (太瓦时)。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="stat-card">
+                    <h3 class="stat-title">美国 🇺🇸</h3>
+                    <p class="text-sm text-gray-500 mb-2">建筑能耗占国家总能耗40%，电力消耗占全国总量75% (年份不详)</p>
+                    <div class="space-y-3 mt-3">
+                        <div>
+                            <p class="font-semibold text-primary-blue">住宅电力消耗 (2020):</p>
+                            <p class="text-2xl font-bold">约 1337 <span class="text-lg">TWh</span></p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-primary-blue">商业建筑总能耗 (2018):</p>
+                            <p class="text-2xl font-bold">约 7174 <span class="text-lg">PJ</span></p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-primary-blue">商业建筑电力消耗 (2018):</p>
+                            <p class="text-2xl font-bold">约 1196 <span class="text-lg">TWh</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <h3 class="stat-title">中国 🇨🇳</h3>
+                     <div class="space-y-3 mt-3">
+                        <div>
+                            <p class="font-semibold text-primary-blue">建筑与建造全生命周期总能耗 (2020):</p>
+                            <p class="text-2xl font-bold">约 66,532 <span class="text-lg">PJ</span></p>
+                            <p class="text-xs text-gray-500">(占中国能源消费总量45.5%)</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-primary-blue">住宅建筑总能耗 (约2020):</p>
+                            <p class="text-2xl font-bold">约 18,080 <span class="text-lg">PJ</span></p>
+                        </div>
+                         <p class="text-sm text-gray-500 mt-2">注：报告中未提供建筑总电力消耗数据，但提及数据中心电力消耗预计显著增长。</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <h3 class="stat-title">欧盟 (EU27) 🇪🇺</h3>
+                    <div class="space-y-3 mt-3">
+                        <div>
+                            <p class="font-semibold text-primary-blue">建筑总能耗 (住宅+服务业, 2022):</p>
+                            <p class="text-2xl font-bold">约 14,825 <span class="text-lg">PJ</span></p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-primary-blue">建筑总电力消耗 (住宅+服务业, 2022):</p>
+                            <p class="text-2xl font-bold">约 1393 <span class="text-lg">TWh</span></p>
+                        </div>
+                    </div>
+                     <details class="text-sm mt-3">
+                        <summary class="cursor-pointer text-secondary-blue">查看细分数据</summary>
+                        <ul class="list-disc list-inside mt-1 text-gray-600">
+                            <li>住宅总能耗 (2022): 9,745 PJ</li>
+                            <li>住宅电力消耗 (2022): 679.4 TWh</li>
+                            <li>服务业总能耗 (2022): 5,080 PJ</li>
+                            <li>服务业电力消耗 (2022): 713.9 TWh</li>
+                        </ul>
+                    </details>
+                </div>
+
+                <div class="stat-card">
+                    <h3 class="stat-title">英国 🇬🇧</h3>
+                    <div class="space-y-3 mt-3">
+                        <div>
+                            <p class="font-semibold text-primary-blue">住宅电力消耗 (2023):</p>
+                            <p class="text-2xl font-bold">92.6 <span class="text-lg">TWh</span></p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-primary-blue">商业及公管电力消耗 (2023):</p>
+                            <p class="text-2xl font-bold">86.4 <span class="text-lg">TWh</span></p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-primary-blue">合计建筑电力消耗 (2023):</p>
+                            <p class="text-2xl font-bold">约 179 <span class="text-lg">TWh</span></p>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">注：报告中总能耗绝对值需查阅DUKES详细表格。</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <h3 class="stat-title">加拿大 🇨🇦</h3>
+                     <div class="space-y-3 mt-3">
+                        <div>
+                            <p class="font-semibold text-primary-blue">住宅总能耗 (2019):</p>
+                            <p class="text-2xl font-bold">1,500 <span class="text-lg">PJ</span></p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-primary-blue">住宅电力消耗 (2019):</p>
+                            <p class="text-2xl font-bold">170.8 <span class="text-lg">TWh</span></p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-primary-blue">商业/机构总能耗 (2014):</p>
+                            <p class="text-2xl font-bold">915.2 <span class="text-lg">PJ</span></p>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">注：商业/机构电力消耗数据需查阅SCIEU详细表格。数据年份存在差异。</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <h3 class="stat-title">印度 🇮🇳</h3>
+                    <div class="space-y-3 mt-3">
+                        <div>
+                            <p class="font-semibold text-primary-blue">住宅建筑能耗:</p>
+                            <p class="text-2xl font-bold">占国家TFC 30%</p>
+                            <p class="text-xs text-gray-500">(IEA 2020 数据)</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-primary-blue">家庭电力消耗趋势:</p>
+                            <p class="text-lg">自2000年后增长了<span class="text-2xl font-bold accent-yellow">三倍</span></p>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">注：报告指出印度建筑能耗数据在一致性和颗粒度方面面临挑战。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="key-trends" class="mb-12">
+            <h2 class="text-2xl sm:text-3xl font-bold text-center mb-8 text-dark-blue-text">全球核心趋势洞察</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="stat-card md:col-span-1">
+                    <h3 class="stat-title">建筑电气化趋势</h3>
+                    <div class="chart-container">
+                        <canvas id="electrificationTrendChart"></canvas>
+                    </div>
+                    <p class="mt-4 text-center text-sm text-gray-600">全球建筑电力消耗占比从2010年的30%增至2022年的35%。</p>
+                </div>
+                <div class="stat-card md:col-span-2">
+                    <h3 class="stat-title">数据中心能耗激增</h3>
+                     <div class="chart-container" style="max-width: 600px;">
+                        <canvas id="dataCenterGrowthChart"></canvas>
+                    </div>
+                    <p class="mt-4 text-center text-sm text-gray-600">全球数据中心电力消耗预计将从2024年的415 TWh增至2030年的945 TWh。美国和中国是增长的主要驱动力。</p>
+                </div>
+                <div class="stat-card md:col-span-3 lg:col-span-1 lg:col-start-2">
+                     <h3 class="stat-title">供暖燃料结构 (全球, 2021)</h3>
+                    <div class="chart-container">
+                        <canvas id="heatingFuelMixChart"></canvas>
+                    </div>
+                    <p class="mt-4 text-center text-sm text-gray-600">化石燃料（特别是天然气）仍主导建筑供暖，对脱碳构成挑战。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="data-flow" class="mb-12">
+            <h2 class="text-2xl sm:text-3xl font-bold text-center mb-8 text-dark-blue-text">数据是如何来的？(简化流程)</h2>
+            <p class="text-center text-gray-700 mb-6 max-w-2xl mx-auto">建筑能耗数据的收集和分析是一个复杂的过程，涉及多个层面和机构。以下是一个高度简化的示意流程：</p>
+            <div class="stat-card md:col-span-3">
+                <div class="flowchart-container">
+                    <div class="flowchart-step">国家统计机构/能源部门<br>(如 EIA, Eurostat, NBS)</div>
+                    <div class="flowchart-arrow">⬇️</div>
+                    <div class="flowchart-step">开展调查与数据收集<br>(RECS, CBECS, 能源平衡表等)</div>
+                    <div class="flowchart-arrow">⬇️</div>
+                    <div class="flowchart-step">数据处理、验证与汇编</div>
+                    <div class="flowchart-arrow">↘️ ↙️</div>
+                    <div class="flex flex-col md:flex-row justify-center w-full">
+                        <div class="flowchart-step mx-2 mb-4 md:mb-0">发布国家层面报告<br>(如 DUKES, 中国建筑能耗报告)</div>
+                        <div class="flowchart-step mx-2">提交数据至国际组织<br>(如 IEA, UNEP)</div>
+                    </div>
+                    <div class="flowchart-arrow">⬇️</div>
+                    <div class="flowchart-step">国际组织进行全球/区域分析与发布<br>(如 IEA WEO, GlobalABC报告)</div>
+                </div>
+                <p class="mt-4 text-xs text-center text-gray-500">此流程图使用HTML和Tailwind CSS构建，非SVG或Mermaid JS。</p>
+            </div>
+        </section>
+
+        <section id="conclusion" class="text-center py-8">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-4 text-dark-blue-text">结论与展望</h2>
+            <p class="text-gray-700 max-w-3xl mx-auto leading-relaxed">
+                建筑部门在全球能源消耗和碳排放中占据举足轻重的地位。推动建筑节能、提高电气化水平并转向清洁能源是实现全球气候目标的关键。
+                尽管数据收集和分析面临挑战，但现有趋势表明，制冷和数据中心等新兴领域的能耗增长不容忽视，而供暖脱碳仍是艰巨任务。
+                持续改进能源数据透明度、加强国际合作以及制定有效的能效政策，对于引导建筑行业向可持续未来转型至关重要。
+            </p>
+        </section>
+
+    </main>
+
+    <footer class="bg-dark-blue-text text-white text-center p-6 mt-12">
+        <p>&copy; 2024 全球建筑能耗洞察。基于研究报告生成。</p>
+        <p class="text-xs opacity-70 mt-1">此信息图仅供参考，具体数据请查阅原始报告和官方统计。</p>
+    </footer>
+
+    <script>
+        function wrapLabel(str, maxWidth) {
+            if (str.length <= maxWidth) return str;
+            const words = str.split(' ');
+            let currentLine = '';
+            const lines = [];
+            for (let i = 0; i < words.length; i++) {
+                const word = words[i];
+                if ((currentLine + (currentLine ? ' ' : '') + word).length > maxWidth && currentLine) {
+                    lines.push(currentLine);
+                    currentLine = word;
+                } else {
+                    currentLine += (currentLine ? ' ' : '') + word;
+                }
+            }
+            if (currentLine) lines.push(currentLine);
+            return lines;
+        }
+
+        const defaultChartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        font: { size: 10 },
+                        boxWidth: 20,
+                        padding:15
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(tooltipItems) {
+                            const item = tooltipItems[0];
+                            let label = item.chart.data.labels[item.dataIndex];
+                            if (Array.isArray(label)) {
+                                return label.join(' ');
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }
+        };
+
+        const chartColors = {
+            primaryBlue: '#0077B6',
+            secondaryBlue: '#0096C7',
+            lightBlue: '#ADE8F4',
+            accentYellow: '#FFB703',
+            darkText: '#03045E',
+            gray: '#D1D5DB' // for 'other' category
+        };
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Chart 1: Global Building Energy Share
+            const globalEnergyShareCtx = document.getElementById('globalEnergyShareChart')?.getContext('2d');
+            if (globalEnergyShareCtx) {
+                new Chart(globalEnergyShareCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['建筑运营能耗', '其他领域能耗'],
+                        datasets: [{
+                            label: '全球终端能源消耗占比',
+                            data: [30, 70],
+                            backgroundColor: [chartColors.primaryBlue, chartColors.gray],
+                            borderColor: ['#FFFFFF', '#FFFFFF'],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: { ...defaultChartOptions }
+                });
+            }
+
+            // Chart 2: Global Building Electricity Share
+            const globalElectricityShareCtx = document.getElementById('globalElectricityShareChart')?.getContext('2d');
+            if (globalElectricityShareCtx) {
+                new Chart(globalElectricityShareCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['建筑用电', '建筑其他能源'],
+                        datasets: [{
+                            label: '建筑总能耗中电力占比',
+                            data: [35, 65],
+                            backgroundColor: [chartColors.secondaryBlue, chartColors.gray],
+                            borderColor: ['#FFFFFF', '#FFFFFF'],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: { ...defaultChartOptions }
+                });
+            }
+
+            // Chart 3: Global Building CO2 Emissions
+            const globalCO2EmissionsCtx = document.getElementById('globalCO2EmissionsChart')?.getContext('2d');
+            if (globalCO2EmissionsCtx) {
+                new Chart(globalCO2EmissionsCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['直接排放', '间接排放 (电力与热力)'],
+                        datasets: [{
+                            label: 'CO₂ 排放量 (Gt CO₂)',
+                            data: [3, 6.8],
+                            backgroundColor: [chartColors.primaryBlue, chartColors.accentYellow],
+                            borderColor: [chartColors.primaryBlue, chartColors.accentYellow],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        ...defaultChartOptions,
+                        scales: { y: { beginAtZero: true, title: { display: true, text: 'Gt CO₂' } } }
+                    }
+                });
+            }
+
+            // Chart 4: Electrification Trend
+            const electrificationTrendCtx = document.getElementById('electrificationTrendChart')?.getContext('2d');
+            if (electrificationTrendCtx) {
+                new Chart(electrificationTrendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['2010', '2022'],
+                        datasets: [{
+                            label: '建筑电力消耗占比 (%)',
+                            data: [30, 35],
+                            borderColor: chartColors.primaryBlue,
+                            backgroundColor: 'rgba(0, 119, 182, 0.1)',
+                            fill: true,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        ...defaultChartOptions,
+                        scales: { y: { beginAtZero: false, title: { display: true, text: '占比 (%)' } } }
+                    }
+                });
+            }
+
+            // Chart 5: Data Center Growth
+            const dataCenterGrowthCtx = document.getElementById('dataCenterGrowthChart')?.getContext('2d');
+            if (dataCenterGrowthCtx) {
+                const dataCenterLabels = [
+                    wrapLabel('全球预计总消耗 (2030)', 16),
+                    wrapLabel('美国预计增长量 (至2030)', 16),
+                    wrapLabel('中国预计增长量 (至2030)', 16)
+                ];
+                new Chart(dataCenterGrowthCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: dataCenterLabels,
+                        datasets: [{
+                            label: '电力消耗 (TWh)',
+                            data: [945, 240, 175],
+                            backgroundColor: [chartColors.primaryBlue, chartColors.secondaryBlue, chartColors.accentYellow],
+                        }]
+                    },
+                    options: {
+                        ...defaultChartOptions,
+                        indexAxis: 'y',
+                        scales: { x: { beginAtZero: true, title: { display: true, text: 'TWh' } } }
+                    }
+                });
+            }
+
+            // Chart 6: Heating Fuel Mix
+            const heatingFuelMixCtx = document.getElementById('heatingFuelMixChart')?.getContext('2d');
+            if (heatingFuelMixCtx) {
+                new Chart(heatingFuelMixCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['天然气', '其他化石燃料', '非化石燃料'],
+                        datasets: [{
+                            label: '供暖燃料占比',
+                            data: [40, 26, 34], // 40% Gas, 26% Other Fossil (66%-40%), 34% Non-Fossil
+                            backgroundColor: [chartColors.primaryBlue, chartColors.accentYellow, chartColors.lightBlue],
+                            borderColor: ['#FFFFFF', '#FFFFFF', '#FFFFFF'],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: { ...defaultChartOptions }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
